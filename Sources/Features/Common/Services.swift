@@ -75,6 +75,23 @@ enum FileImport {
     }
 }
 
+/// Files dropped on the window (iPad drag and drop, Split View).
+enum DroppedFile {
+    static func copy(from provider: NSItemProvider) async -> URL? {
+        let type = provider.hasItemConformingToTypeIdentifier(UTType.movie.identifier) ? UTType.movie.identifier : UTType.fileURL.identifier
+        return await withCheckedContinuation { (cont: CheckedContinuation<URL?, Never>) in
+            provider.loadFileRepresentation(forTypeIdentifier: type) { url, _ in
+                guard let url else { cont.resume(returning: nil); return }
+                // The temporary file disappears when this closure returns, so copy now.
+                let dest = Workspace.importSlot(fileName: url.lastPathComponent)
+                try? FileManager.default.removeItem(at: dest)
+                do { try FileManager.default.copyItem(at: url, to: dest); cont.resume(returning: dest) }
+                catch { cont.resume(returning: nil) }
+            }
+        }
+    }
+}
+
 // MARK: - Bundled sample clips
 
 struct SampleClip: Identifiable, Equatable {

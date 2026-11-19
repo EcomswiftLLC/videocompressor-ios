@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SetupView: View {
     @EnvironmentObject private var model: AppModel
+    @Environment(\.horizontalSizeClass) private var hSize
     @State private var showAdvanced = false
     @State private var targetText = ""
     @FocusState private var targetFocused: Bool
@@ -14,16 +15,35 @@ struct SetupView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: SK.Space.l) {
-                clipsSection
-                presetsSection
-                modeSection
-                estimateCard
-                advancedSection
+                // Regular width (iPad full screen, wide Split View, large landscape iPhones) gets two columns; compact width stacks.
+                if hSize == .regular {
+                    HStack(alignment: .top, spacing: SK.Space.l) {
+                        VStack(alignment: .leading, spacing: SK.Space.l) {
+                            clipsSection
+                            presetsSection
+                            estimateCard
+                        }
+                        .frame(maxWidth: .infinity, alignment: .top)
+                        VStack(alignment: .leading, spacing: SK.Space.l) {
+                            modeSection
+                            advancedSection
+                        }
+                        .frame(maxWidth: .infinity, alignment: .top)
+                    }
+                } else {
+                    VStack(alignment: .leading, spacing: SK.Space.l) {
+                        clipsSection
+                        presetsSection
+                        modeSection
+                        estimateCard
+                        advancedSection
+                    }
+                }
                 Color.clear.frame(height: 90)
             }
             .padding(.horizontal, SK.Space.m)
             .padding(.top, SK.Space.s)
-            .skReadable()
+            .skReadable(maxWidth: 1040)
         }
         .scrollIndicators(.hidden)
         .scrollDismissesKeyboard(.interactively)

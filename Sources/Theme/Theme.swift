@@ -95,8 +95,8 @@ extension View {
     }
 
     /// Centres content in a readable column (iPad, landscape) without stretching it edge to edge.
-    func skReadable() -> some View {
-        frame(maxWidth: SK.readableWidth).frame(maxWidth: .infinity)
+    func skReadable(maxWidth: CGFloat = SK.readableWidth) -> some View {
+        frame(maxWidth: maxWidth).frame(maxWidth: .infinity)
     }
 }
 

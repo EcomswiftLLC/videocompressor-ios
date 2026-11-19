@@ -1,7 +1,7 @@
 Shrinkly makes videos smaller. There is no account, no login and no demo credentials. Everything works on first launch, and no video library is needed.
 
 How to test:
-1. Finish the short welcome screens. On Home, tap "Try a sample clip" and choose one of the four clips built into the app (or choose a video from your library, or import a file from Files).
+1. On Home, tap "Try a sample clip" and choose one of the four clips built into the app (or choose a video from your library, or import a file from Files).
 2. On the setup screen, tap a preset (for example WhatsApp or Email 25 MB), or set a size in MB with the slider. The estimate updates live. Open Advanced for resolution, frame rate, H.264 or HEVC, audio and metadata options.
 3. Tap Compress. Progress and time left are shown and Cancel works. On the result screen you can see the original and new size, and Compare shows the original and the result side by side.
 4. Tap Save (or Share). Batch: add several clips and compress them together; the "You saved" total updates.

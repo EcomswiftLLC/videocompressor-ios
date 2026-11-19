@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import UniformTypeIdentifiers
 
 struct HomeView: View {
     @EnvironmentObject private var model: AppModel
@@ -8,6 +9,7 @@ struct HomeView: View {
     @State private var showFiles = false
     @State private var showSettings = false
     @State private var showFormats = false
+    @State private var dropTargeted = false
 
     var body: some View {
         NavigationStack(path: $model.path) {
@@ -50,6 +52,19 @@ struct HomeView: View {
                 case .run: RunView()
                 }
             }
+            .onDrop(of: [UTType.movie, UTType.fileURL], isTargeted: $dropTargeted) { providers in
+                handleDrop(providers)
+            }
+            .overlay {
+                if dropTargeted {
+                    RoundedRectangle(cornerRadius: SK.Radius.card)
+                        .strokeBorder(SK.Palette.champagne, style: StrokeStyle(lineWidth: 2, dash: [8, 6]))
+                        .background(SK.Palette.champagne.opacity(0.08), in: RoundedRectangle(cornerRadius: SK.Radius.card))
+                        .overlay(Text("Drop videos to compress").font(SK.Font.title(22)).foregroundStyle(SK.Palette.ivory))
+                        .padding(SK.Space.m)
+                        .allowsHitTesting(false)
+                }
+            }
             .sheet(isPresented: $showSettings) { SettingsView() }
             .sheet(isPresented: $showFormats) { FormatsView() }
             .fileImporter(isPresented: $showFiles, allowedContentTypes: FileImport.allowedTypes, allowsMultipleSelection: true) { result in
@@ -80,6 +95,26 @@ struct HomeView: View {
                 }
             }
         }
+    }
+
+    /// Drag and drop from Files, Photos or another window (iPad Split View). Each provider is copied into the workspace.
+    private func handleDrop(_ providers: [NSItemProvider]) -> Bool {
+        let candidates = providers.filter { $0.hasItemConformingToTypeIdentifier(UTType.movie.identifier) || $0.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) }
+        guard !candidates.isEmpty else { return false }
+        model.isLoading = true
+        Task {
+            var urls: [URL] = []
+            for provider in candidates.prefix(AppModel.maxItems) {
+                if let url = await DroppedFile.copy(from: provider) { urls.append(url) }
+            }
+            model.isLoading = false
+            if urls.isEmpty {
+                model.loadMessage = "The dropped item couldn't be opened as a video."
+            } else {
+                await model.add(urls: urls)
+            }
+        }
+        return true
     }
 
     private func load(_ items: [PhotosPickerItem]) async {
