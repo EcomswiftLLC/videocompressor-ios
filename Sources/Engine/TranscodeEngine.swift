@@ -22,8 +22,27 @@ protocol TranscodeEngine {
 enum EngineRouter {
     static func engine(for info: MediaInfo) -> TranscodeEngine {
         switch info.route {
-        case .native: return NativeEngine()
+        case .native: return FallbackEngine()
         case .ffmpeg: return FFmpegEngine()
+        }
+    }
+}
+
+/// AVFoundation first. When it cannot read or encode a file it opened (an odd stream inside an MP4, say), the FFmpeg
+/// engine gets one go at the same job before the person sees an error.
+struct FallbackEngine: TranscodeEngine {
+    func transcode(_ job: TranscodeJob, progress: @escaping @Sendable (ProgressUpdate) -> Void) async throws -> URL {
+        do {
+            return try await NativeEngine().transcode(job, progress: progress)
+        } catch {
+            let mapped = TranscodeError.map(error)
+            switch mapped {
+            case .cancelled, .diskFull, .protectedContent, .codecUnavailable: throw error
+            default: break
+            }
+            if Task.isCancelled { throw TranscodeError.cancelled }
+            try? FileManager.default.removeItem(at: job.output)
+            return try await FFmpegEngine().transcode(job, progress: progress)
         }
     }
 }

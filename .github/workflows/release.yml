@@ -24,6 +24,9 @@ jobs:
       - name: Install XcodeGen
         run: brew install xcodegen
 
+      - name: Fetch FFmpeg (LGPL build)
+        run: bash tools/fetch_ffmpeg.sh
+
       - name: Generate project
         run: xcodegen generate
 

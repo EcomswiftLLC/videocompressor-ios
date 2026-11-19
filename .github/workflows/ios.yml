@@ -29,8 +29,16 @@ jobs:
           sudo xcode-select -s "$XC"
           xcodebuild -version
       - run: brew install xcodegen
+      - name: Fetch FFmpeg (LGPL build)
+        run: bash tools/fetch_ffmpeg.sh
       - run: xcodegen generate
+      - name: Make FFmpeg test clips (MKV, AVI, WebM, WMV, FLV, TS, MPEG, OGV)
+        run: |
+          brew install ffmpeg
+          bash tools/make_fixtures.sh "$RUNNER_TEMP/fixtures"
       - name: Unit tests
+        env:
+          TEST_RUNNER_SHRINKLY_FIXTURES: ${{ runner.temp }}/fixtures
         run: |
           set -o pipefail
           mkdir -p build
@@ -79,6 +87,8 @@ jobs:
           XC=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
           sudo xcode-select -s "$XC"
       - run: brew install xcodegen
+      - name: Fetch FFmpeg (LGPL build)
+        run: bash tools/fetch_ffmpeg.sh
       - run: xcodegen generate
       - name: Build for simulator
         run: |
@@ -148,6 +158,8 @@ jobs:
           XC=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
           sudo xcode-select -s "$XC"
       - run: brew install xcodegen
+      - name: Fetch FFmpeg (LGPL build)
+        run: bash tools/fetch_ffmpeg.sh
       - run: xcodegen generate
       - name: Build for simulator
         run: |
@@ -216,6 +228,8 @@ jobs:
           XC=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
           sudo xcode-select -s "$XC"
       - run: brew install xcodegen
+      - name: Fetch FFmpeg (LGPL build)
+        run: bash tools/fetch_ffmpeg.sh
       - run: xcodegen generate
       - name: UI tests on iPad (landscape screens and first-run flow)
         run: |
@@ -273,6 +287,8 @@ jobs:
           XC=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
           sudo xcode-select -s "$XC"
       - run: brew install xcodegen
+      - name: Fetch FFmpeg (LGPL build)
+        run: bash tools/fetch_ffmpeg.sh
       - run: xcodegen generate
       - name: UI tests on iPhone (landscape screens and first-run flow)
         run: |

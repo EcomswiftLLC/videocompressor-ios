@@ -37,6 +37,9 @@ targets:
         product: GoogleMobileAds
       - package: GoogleUserMessagingPlatform
         product: GoogleUserMessagingPlatform
+      - framework: Vendor/FFmpegLGPL.xcframework
+        embed: true
+        codeSign: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.ecomswift.shrinkly
@@ -49,6 +52,9 @@ targets:
         SUPPORTS_MACCATALYST: NO
         SWIFT_STRICT_CONCURRENCY: minimal
         TARGETED_DEVICE_FAMILY: "1,2"
+        HEADER_SEARCH_PATHS: "$(SRCROOT)/Vendor/include"
+        SWIFT_OBJC_BRIDGING_HEADER: Sources/FFmpegBridge/Shrinkly-Bridging-Header.h
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks"
   ShrinklyTests:
     type: bundle.unit-test
     platform: iOS
