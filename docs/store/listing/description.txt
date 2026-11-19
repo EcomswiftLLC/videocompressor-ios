@@ -1,0 +1,35 @@
+Make big videos small. Shrinkly shrinks a video to the size you choose, in MB, or by quality, so it fits WhatsApp, an email or a text. It is free, there is no account, and your videos are never uploaded.
+
+SHRINK TO A SIZE
+- Set a target in MB with a slider or by typing it, and see a live estimate before you start
+- Or choose a quality level and let the size follow
+- Shrinkly aims for your target. If a clip cannot reach it without turning to blocks, the app tells you and suggests what to change
+- Presets for WhatsApp, Telegram, Discord, Email (25 MB), Instagram and Reels, TikTok, X, YouTube Shorts and Messages. Services change their limits, so check the preset's target against the app you are sending to
+
+BATCH AND "YOU SAVED"
+- Add many videos and compress them in one queue, with progress, time left and a cancel button
+- A running counter shows the total space you saved, such as "You saved 3.4 GB"
+
+CHECK THE QUALITY
+- Compare the original and the result before you save, with both file sizes side by side
+
+CONTROL THE DETAILS
+- H.264 for compatibility, or HEVC for smaller files
+- Lower the resolution, reduce 60 frames per second to 30 or 24, change or mute the audio
+- Strip location and other metadata, and trim the clip
+- Your original is never changed. Shrinkly always saves a new file, and only offers to delete the original after you save
+
+OPENS MORE THAN IOS DOES
+- Reads MP4, MOV, M4V and 3GP, and also MKV, WebM, AVI, WMV, FLV, MPEG, TS and more, through a built-in open-source engine
+- Saves as MP4 or MOV, so the result plays on Apple devices and in the apps you share to
+- Videos protected by DRM, such as store purchases and rentals, cannot be processed
+
+PRIVATE BY DESIGN
+Everything happens on your iPhone or iPad. Your videos are not uploaded, there is no cloud queue and there is no account. You choose videos with the iOS photo picker, so Shrinkly sees only the ones you pick, and saving to your library needs add-only access.
+
+FREE, WITH ADS
+Shrinkly is free. Ads from Google AdMob pay for it: a banner on the Home screen and, before you save or share, one short video that you choose to watch. A batch needs one ad. If no ad is available, your export goes ahead. If you allow tracking when iOS asks, the ads may use your advertising identifier. The app works the same either way.
+
+Try it with the built-in sample clips, no video of your own needed. Shrinkly uses FFmpeg under the LGPL, see Settings > Open-source licences.
+
+Questions or ideas? Write to support@ecomswiftllc.com.

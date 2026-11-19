@@ -1,0 +1,12 @@
+# Sample video credits
+
+The four sample clips bundled with Shrinkly (the "Try a sample clip" button and the store screenshots) are from Pexels (https://www.pexels.com), licensed under the Pexels License (https://www.pexels.com/license/): free to use, including commercially, no attribution required, modification allowed. Retrieved 2026-11-19 from the Pexels download endpoint (original 4K or 1080p files). Each clip was trimmed, scaled to 1080p (portrait clip 1080x1920), audio removed (the sources carry none worth keeping) and re-encoded as H.264 (libx264 CRF 23 with a bitrate cap, yuv420p, faststart, metadata stripped) so every file stays under 6 MB. No other edits were made.
+
+| File | Source page | Creator | Site | Licence | Licence URL | Retrieved | Pixels | Duration | fps | Bytes | Why it is in the set |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| rocky-surf.mp4 | https://www.pexels.com/video/powerful-ocean-waves-crashing-against-rocks-35257455/ | 정규송 Nui MALAMA (as shown on Pexels) | Pexels | Pexels License | https://www.pexels.com/license/ | 2026-11-19 | 1920x1080 | 10 s | 30 | 5399207 | high motion, bright white water |
+| night-intersection.mp4 | https://www.pexels.com/video/vibrant-nighttime-city-intersection-timelapse-33733274/ | Evgenij Mikhailov | Pexels | Pexels License | https://www.pexels.com/license/ | 2026-11-19 | 1920x1080 | 9 s | 30 | 5777581 | dark, busy, noisy detail (hard to compress) |
+| cloud-field.mp4 | https://www.pexels.com/video/timelapse-of-puffy-cumulus-clouds-over-green-fields-30872234/ | Ndumiso Mvelase | Pexels | Pexels License | https://www.pexels.com/license/ | 2026-11-19 | 1920x1080 | 12 s | 25 | 5940200 | calm, smooth gradients |
+| reed-sunset.mp4 | https://www.pexels.com/video/sunlight-seen-through-leaves-10395606/ | Dmitry Marchenkov | Pexels | Pexels License | https://www.pexels.com/license/ | 2026-11-19 | 1080x1920 (portrait) | 12 s | 24 | 5630406 | portrait, silhouettes against sky |
+
+Notes: the Pexels pages show no editorial-only, sensitive-content or watermark flags. None of the clips shows an identifiable person (night-intersection shows a few tiny, distant pedestrians and vehicles at night, no faces and no legible plates; if you want zero risk, replace it). The Pexels page title of reed-sunset is "Sunlight seen through leaves"; the footage shows reed grass silhouetted against the evening sky, hence the app title. The source files have no audio track, so the samples do not demonstrate audio handling.

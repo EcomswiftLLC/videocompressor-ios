@@ -1,0 +1,19 @@
+Shrinkly makes videos smaller. There is no account, no login and no demo credentials. Everything works on first launch, and no video library is needed.
+
+How to test:
+1. Finish the short welcome screens. On Home, tap "Try a sample clip" and choose one of the four clips built into the app (or choose a video from your library, or import a file from Files).
+2. On the setup screen, tap a preset (for example WhatsApp or Email 25 MB), or set a size in MB with the slider. The estimate updates live. Open Advanced for resolution, frame rate, H.264 or HEVC, audio and metadata options.
+3. Tap Compress. Progress and time left are shown and Cancel works. On the result screen you can see the original and new size, and Compare shows the original and the result side by side.
+4. Tap Save (or Share). Batch: add several clips and compress them together; the "You saved" total updates.
+
+Ads: the app is free and supported by Google AdMob. A banner appears on Home only. Before each save, share or export, the app offers one opt-in rewarded video; a batch is one ad. The video is optional to watch, and if no ad is available (offline, no fill, consent pending), the export simply goes ahead without one. There are no in-app purchases, no subscriptions and no watermark. A Google UMP consent form may appear first in regions where it is required, followed by the App Tracking Transparency prompt; the app works the same whichever choice is made.
+
+Permissions: Photos (read access through the system photo picker only for the videos the user chooses; add-only access to save results). Tracking (App Tracking Transparency, for ads). The app does not use the camera, the microphone or location.
+
+Open-source software: the app reads formats such as MKV, AVI and WebM with FFmpeg, built LGPL-only (no GPL, no x264/x265) and linked as a dynamic framework. Licences, versions and the source offer are in Settings > Open-source licences and at https://ecomswiftllc.github.io/shrinkly/licenses/ . Build scripts: https://github.com/EcomswiftLLC/ffmpeg-ios-lgpl
+
+DRM-protected video (for example store purchases) cannot be processed; the app shows a clear message and does not try to bypass protection.
+
+Privacy: videos are processed on the device and are never uploaded. The only network traffic is the Google Mobile Ads SDK. Privacy policy: https://ecomswiftllc.github.io/shrinkly/privacy/
+
+Sample clips bundled with the app are from Pexels (Pexels License); credits are in the project documentation.
