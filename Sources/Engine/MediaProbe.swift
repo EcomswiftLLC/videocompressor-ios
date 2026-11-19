@@ -9,6 +9,10 @@ enum MediaProbe {
         let name = displayName ?? url.lastPathComponent
         let size = Int64((try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0)
 
+        // Containers AVFoundation only half understands (an AVI whose MP3 sound it silently drops, say) go to FFmpeg first.
+        if FormatSupport.route(forExtension: url.pathExtension) == .ffmpeg,
+           let info = try await FFmpegEngine.probe(url: url, displayName: name, fileSize: size) { return info }
+
         let asset = AVURLAsset(url: url, options: [AVURLAssetPreferPreciseDurationAndTimingKey: true])
         let readable = (try? await asset.load(.isReadable)) ?? false
         if readable {

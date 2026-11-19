@@ -83,6 +83,22 @@ int shk_probe(const char *path, ShkProbe *out) {
 
 // MARK: thumbnail
 
+static int open_video_decoder(const char *path, AVFormatContext **fmt, AVCodecContext **dec, int *vi) {
+    int ret = avformat_open_input(fmt, path, NULL, NULL);
+    if (ret < 0) return ret;
+    if ((ret = avformat_find_stream_info(*fmt, NULL)) < 0) return ret;
+    *vi = av_find_best_stream(*fmt, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
+    if (*vi < 0) return -1;
+    AVStream *vs = (*fmt)->streams[*vi];
+    const AVCodec *codec = vs->codecpar->codec_id == AV_CODEC_ID_AV1 ? avcodec_find_decoder_by_name("libdav1d") : NULL;
+    if (!codec) codec = avcodec_find_decoder(vs->codecpar->codec_id);
+    if (!codec) return -1;
+    *dec = avcodec_alloc_context3(codec);
+    avcodec_parameters_to_context(*dec, vs->codecpar);
+    (*dec)->thread_count = 0;
+    return avcodec_open2(*dec, codec, NULL);
+}
+
 int shk_thumbnail(const char *path, double seconds, int max_dim, uint8_t **rgba, int *width, int *height) {
     *rgba = NULL;
     AVFormatContext *fmt = NULL;
@@ -90,43 +106,41 @@ int shk_thumbnail(const char *path, double seconds, int max_dim, uint8_t **rgba,
     AVPacket *pkt = av_packet_alloc();
     AVFrame *frame = av_frame_alloc();
     struct SwsContext *sws = NULL;
-    int ret = avformat_open_input(&fmt, path, NULL, NULL);
-    if (ret < 0) goto done;
-    if ((ret = avformat_find_stream_info(fmt, NULL)) < 0) goto done;
-    int vi = av_find_best_stream(fmt, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
-    if (vi < 0) { ret = -1; goto done; }
-    AVStream *vs = fmt->streams[vi];
-    const AVCodec *codec = vs->codecpar->codec_id == AV_CODEC_ID_AV1 ? avcodec_find_decoder_by_name("libdav1d") : NULL;
-    if (!codec) codec = avcodec_find_decoder(vs->codecpar->codec_id);
-    if (!codec) { ret = -1; goto done; }
-    dec = avcodec_alloc_context3(codec);
-    avcodec_parameters_to_context(dec, vs->codecpar);
-    dec->thread_count = 0;
-    if ((ret = avcodec_open2(dec, codec, NULL)) < 0) goto done;
-    int64_t base = fmt->start_time != AV_NOPTS_VALUE ? fmt->start_time : 0;
+    int ret = -1;
     int got = 0;
-    int64_t target = av_rescale_q(base + (int64_t)(seconds * AV_TIME_BASE), AV_TIME_BASE_Q, vs->time_base);
-    // Pass 0 seeks near the requested time; pass 1 restarts from the beginning (some containers, e.g. MPEG-TS,
-    // seek imprecisely); pass 2 accepts the first decodable picture.
+    // Pass 0 seeks near the requested time. Pass 1 reopens the file and reads from the start up to that time (some
+    // containers, MPEG-TS for one, seek to a spot with no decodable picture). Pass 2 takes the first picture.
     for (int pass = 0; pass < 3 && !got; pass++) {
-        if (pass == 0) { if (seconds > 0.05) av_seek_frame(fmt, -1, base + (int64_t)(seconds * AV_TIME_BASE), AVSEEK_FLAG_BACKWARD); }
-        else { av_seek_frame(fmt, -1, base, AVSEEK_FLAG_BACKWARD); avcodec_flush_buffers(dec); }
+        avcodec_free_context(&dec);
+        avformat_close_input(&fmt);
+        int vi = -1;
+        if ((ret = open_video_decoder(path, &fmt, &dec, &vi)) < 0) goto done;
+        AVStream *vs = fmt->streams[vi];
+        int64_t base = fmt->start_time != AV_NOPTS_VALUE ? fmt->start_time : 0;
+        int64_t target = av_rescale_q(base + (int64_t)(seconds * AV_TIME_BASE), AV_TIME_BASE_Q, vs->time_base);
+        if (pass == 0 && seconds > 0.05) av_seek_frame(fmt, -1, base + (int64_t)(seconds * AV_TIME_BASE), AVSEEK_FLAG_BACKWARD);
         int need_target = seconds > 0.05 && pass < 2;
         int guard = 0;
         int eof = 0;
-        while (!got && !eof && guard++ < 4000) {
+        while (!got && !eof && guard++ < 6000) {
             int rr = av_read_frame(fmt, pkt);
-            if (rr < 0) { eof = 1; avcodec_send_packet(dec, NULL); }
-            else if (pkt->stream_index != vi) { av_packet_unref(pkt); continue; }
-            else if (avcodec_send_packet(dec, pkt) < 0) { av_packet_unref(pkt); continue; }
-            if (rr >= 0) av_packet_unref(pkt);
+            if (rr < 0) {
+                eof = 1;
+                avcodec_send_packet(dec, NULL);
+            } else if (pkt->stream_index != vi) {
+                av_packet_unref(pkt);
+                continue;
+            } else {
+                int sent = avcodec_send_packet(dec, pkt);
+                av_packet_unref(pkt);
+                if (sent < 0) continue;
+            }
             while (avcodec_receive_frame(dec, frame) >= 0) {
                 if (need_target && frame->best_effort_timestamp != AV_NOPTS_VALUE && frame->best_effort_timestamp < target) { av_frame_unref(frame); continue; }
                 got = 1;
                 break;
             }
         }
-        if (!got && pass == 1) { /* nothing at or after the target: fall through to pass 2 */ }
     }
     if (!got) { ret = -1; goto done; }
     int sw = frame->width, sh = frame->height;

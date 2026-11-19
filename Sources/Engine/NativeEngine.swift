@@ -49,8 +49,18 @@ final class NativeSession: @unchecked Sendable {
         return cancelledFlag
     }
 
+    /// Removes the output and the writer's hidden ".sb-" scratch file, which can outlive a cancelled write for a moment.
     func removeOutput() {
-        try? FileManager.default.removeItem(at: job.output)
+        let fm = FileManager.default
+        let dir = job.output.deletingLastPathComponent()
+        let prefix = job.output.lastPathComponent + ".sb-"
+        // Sweep, give the writer a moment to finish tearing down, sweep again.
+        for pass in 0..<3 {
+            try? fm.removeItem(at: job.output)
+            let scratch = ((try? fm.contentsOfDirectory(atPath: dir.path)) ?? []).filter { $0.hasPrefix(prefix) }
+            for name in scratch { try? fm.removeItem(at: dir.appendingPathComponent(name)) }
+            if pass < 2 { Thread.sleep(forTimeInterval: 0.15) }
+        }
     }
 
     func run() async throws -> URL {
