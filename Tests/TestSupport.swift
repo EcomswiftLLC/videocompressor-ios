@@ -51,8 +51,16 @@ enum SyntheticVideo {
         writer.startSession(atSourceTime: .zero)
 
         let frames = Int(o.duration * Double(o.fps))
+        // Audio must be appended in step with video: AVAssetWriter interleaves the tracks and stops accepting video
+        // once its audio input is far behind, so writing all video first deadlocks.
+        let tone = aIn.map { ToneFeeder(input: $0, seconds: o.duration) }
         for i in 0..<frames {
-            while !vIn.isReadyForMoreMediaData { try await Task.sleep(nanoseconds: 2_000_000) }
+            var waited = 0
+            while !vIn.isReadyForMoreMediaData {
+                try await Task.sleep(nanoseconds: 2_000_000)
+                waited += 1
+                if waited > 10_000 { throw NSError(domain: "test", code: 5, userInfo: [NSLocalizedDescriptionKey: "video writer stalled"]) }
+            }
             var pb: CVPixelBuffer?
             CVPixelBufferCreate(nil, o.width, o.height, kCVPixelFormatType_32BGRA, nil, &pb)
             guard let buffer = pb else { continue }
@@ -73,37 +81,61 @@ enum SyntheticVideo {
             }
             CVPixelBufferUnlockBaseAddress(buffer, [])
             adaptor.append(buffer, withPresentationTime: CMTime(value: CMTimeValue(i), timescale: CMTimeScale(o.fps)))
+            try await tone?.feed(upTo: Double(i + 1) / Double(o.fps))
         }
         vIn.markAsFinished()
-
-        if let aIn { try await writeTone(into: aIn, seconds: o.duration) }
+        try await tone?.finish()
         await writer.finishWriting()
         guard writer.status == .completed else { throw writer.error ?? NSError(domain: "test", code: 2) }
         return url
     }
 
-    private static func writeTone(into input: AVAssetWriterInput, seconds: Double) async throws {
+    /// Produces a 440 Hz tone and hands it to the audio input a little at a time.
+    private final class ToneFeeder {
+        let input: AVAssetWriterInput
+        let total: Int
         let rate = 44_100
-        var asbd = AudioStreamBasicDescription(mSampleRate: Float64(rate), mFormatID: kAudioFormatLinearPCM,
-                                               mFormatFlags: kAudioFormatFlagIsSignedInteger | kAudioFormatFlagIsPacked,
-                                               mBytesPerPacket: 2, mFramesPerPacket: 1, mBytesPerFrame: 2, mChannelsPerFrame: 1,
-                                               mBitsPerChannel: 16, mReserved: 0)
-        var format: CMAudioFormatDescription?
-        CMAudioFormatDescriptionCreate(allocator: nil, asbd: &asbd, layoutSize: 0, layout: nil, magicCookieSize: 0, magicCookie: nil, extensions: nil, formatDescriptionOut: &format)
-        guard let format else { return }
-        let chunk = 4096
         var written = 0
-        let total = Int(seconds * Double(rate))
-        while written < total {
-            while !input.isReadyForMoreMediaData { try await Task.sleep(nanoseconds: 2_000_000) }
-            let n = min(chunk, total - written)
+        var format: CMAudioFormatDescription?
+
+        init(input: AVAssetWriterInput, seconds: Double) {
+            self.input = input
+            self.total = Int(seconds * 44_100)
+            var asbd = AudioStreamBasicDescription(mSampleRate: 44_100, mFormatID: kAudioFormatLinearPCM,
+                                                   mFormatFlags: kAudioFormatFlagIsSignedInteger | kAudioFormatFlagIsPacked,
+                                                   mBytesPerPacket: 2, mFramesPerPacket: 1, mBytesPerFrame: 2, mChannelsPerFrame: 1,
+                                                   mBitsPerChannel: 16, mReserved: 0)
+            CMAudioFormatDescriptionCreate(allocator: nil, asbd: &asbd, layoutSize: 0, layout: nil, magicCookieSize: 0, magicCookie: nil, extensions: nil, formatDescriptionOut: &format)
+        }
+
+        func feed(upTo seconds: Double) async throws {
+            let target = min(total, Int(seconds * Double(rate)))
+            let chunk = 4096
+            while written < target {
+                var waited = 0
+                while !input.isReadyForMoreMediaData {
+                    try await Task.sleep(nanoseconds: 2_000_000)
+                    waited += 1
+                    if waited > 5_000 { return }   // 10 s: the writer wants video first; the next call retries
+                }
+                try append(min(chunk, target - written))
+            }
+        }
+
+        func finish() async throws {
+            try await feed(upTo: Double(total) / Double(rate))
+            input.markAsFinished()
+        }
+
+        private func append(_ n: Int) throws {
+            guard let format else { throw NSError(domain: "test", code: 3) }
             var samples = [Int16](repeating: 0, count: n)
             for k in 0..<n { samples[k] = Int16(8000 * sin(2 * Double.pi * 440 * Double(written + k) / Double(rate))) }
             let bytes = n * 2
             var block: CMBlockBuffer?
             CMBlockBufferCreateWithMemoryBlock(allocator: nil, memoryBlock: nil, blockLength: bytes, blockAllocator: nil, customBlockSource: nil,
                                                offsetToData: 0, dataLength: bytes, flags: 0, blockBufferOut: &block)
-            guard let block else { return }
+            guard let block else { throw NSError(domain: "test", code: 4) }
             samples.withUnsafeBytes { raw in
                 _ = CMBlockBufferReplaceDataBytes(with: raw.baseAddress!, blockBuffer: block, offsetIntoDestination: 0, dataLength: bytes)
             }
@@ -115,7 +147,6 @@ enum SyntheticVideo {
             if let sample { input.append(sample) }
             written += n
         }
-        input.markAsFinished()
     }
 }
 
