@@ -20,7 +20,7 @@ struct HomeView: View {
                         if history.totalSavedBytes > 0 { savedCard }
                         actions
                         formatsRow
-                        if !history.entries.isEmpty { recent }
+                        if history.entries.isEmpty { howItWorks } else { recent }
                         Color.clear.frame(height: 70)
                     }
                     .padding(.horizontal, SK.Space.m)
@@ -220,6 +220,39 @@ struct HomeView: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("formatsRow")
+    }
+
+    private var howItWorks: some View {
+        let steps: [(symbol: String, title: String, detail: String)] = [
+            ("photo.on.rectangle.angled", "Pick a video", "From Photos or Files, or drop one in."),
+            ("slider.horizontal.3", "Choose a size", "Tap WhatsApp, Email or Discord, or set your own target."),
+            ("square.and.arrow.up", "Share the smaller file", "Save it or send it. Nothing leaves your device.")
+        ]
+        return VStack(alignment: .leading, spacing: SK.Space.s) {
+            SKSectionTitle(text: "How it works")
+            SKCard(padding: 0) {
+                VStack(spacing: 0) {
+                    ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
+                        HStack(alignment: .top, spacing: 14) {
+                            Image(systemName: step.symbol)
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundStyle(SK.Palette.champagne)
+                                .frame(width: 28)
+                                .accessibilityHidden(true)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(step.title).font(SK.Font.label).foregroundStyle(SK.Palette.ivory)
+                                Text(step.detail).font(SK.Font.caption).foregroundStyle(SK.Palette.mist)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            Spacer(minLength: 0)
+                        }
+                        .padding(SK.Space.m)
+                        .accessibilityElement(children: .combine)
+                        if index < steps.count - 1 { SKHairline().padding(.leading, SK.Space.m) }
+                    }
+                }
+            }
+        }
     }
 
     private var recent: some View {
