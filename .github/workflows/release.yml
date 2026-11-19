@@ -78,6 +78,20 @@ jobs:
             esac
           done
 
+      - name: Check the ad code is in the Release binary
+        run: |
+          # The rewarded gate and the Home banner must be compiled into the shipped binary, not stripped or behind DEBUG.
+          SKP=build/Shrinkly.xcarchive/Products/Applications/Shrinkly.app
+          BIN="$SKP/Shrinkly"
+          for NAME in RewardedGate BannerAdView AdsManager GADBannerView GADRewardedAd; do
+            COUNT=$(strings -a "$BIN" | grep -c "$NAME" || true)
+            echo "$NAME: $COUNT mentions"
+            if [ "$COUNT" -lt 1 ]; then echo "$NAME is missing from the Release binary" && exit 1; fi
+          done
+          # Debug-only launch switches must not be reachable in Release.
+          if strings -a "$BIN" | grep -q "skNoAds"; then echo "skNoAds debug switch found in Release" && exit 1; fi
+          if strings -a "$BIN" | grep -q "skScreen"; then echo "skScreen debug switch found in Release" && exit 1; fi
+
       - name: Create distribution certificate and profile (short-lived)
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
