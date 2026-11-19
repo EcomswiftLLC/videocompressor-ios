@@ -104,19 +104,29 @@ int shk_thumbnail(const char *path, double seconds, int max_dim, uint8_t **rgba,
     dec->thread_count = 0;
     if ((ret = avcodec_open2(dec, codec, NULL)) < 0) goto done;
     int64_t base = fmt->start_time != AV_NOPTS_VALUE ? fmt->start_time : 0;
-    if (seconds > 0.05) av_seek_frame(fmt, -1, base + (int64_t)(seconds * AV_TIME_BASE), AVSEEK_FLAG_BACKWARD);
     int got = 0;
     int64_t target = av_rescale_q(base + (int64_t)(seconds * AV_TIME_BASE), AV_TIME_BASE_Q, vs->time_base);
-    int guard = 0;
-    while (!got && guard++ < 4000 && av_read_frame(fmt, pkt) >= 0) {
-        if (pkt->stream_index == vi && avcodec_send_packet(dec, pkt) >= 0) {
+    // Pass 0 seeks near the requested time; pass 1 restarts from the beginning (some containers, e.g. MPEG-TS,
+    // seek imprecisely); pass 2 accepts the first decodable picture.
+    for (int pass = 0; pass < 3 && !got; pass++) {
+        if (pass == 0) { if (seconds > 0.05) av_seek_frame(fmt, -1, base + (int64_t)(seconds * AV_TIME_BASE), AVSEEK_FLAG_BACKWARD); }
+        else { av_seek_frame(fmt, -1, base, AVSEEK_FLAG_BACKWARD); avcodec_flush_buffers(dec); }
+        int need_target = seconds > 0.05 && pass < 2;
+        int guard = 0;
+        int eof = 0;
+        while (!got && !eof && guard++ < 4000) {
+            int rr = av_read_frame(fmt, pkt);
+            if (rr < 0) { eof = 1; avcodec_send_packet(dec, NULL); }
+            else if (pkt->stream_index != vi) { av_packet_unref(pkt); continue; }
+            else if (avcodec_send_packet(dec, pkt) < 0) { av_packet_unref(pkt); continue; }
+            if (rr >= 0) av_packet_unref(pkt);
             while (avcodec_receive_frame(dec, frame) >= 0) {
-                if (frame->best_effort_timestamp != AV_NOPTS_VALUE && frame->best_effort_timestamp < target && seconds > 0.05) { av_frame_unref(frame); continue; }
+                if (need_target && frame->best_effort_timestamp != AV_NOPTS_VALUE && frame->best_effort_timestamp < target) { av_frame_unref(frame); continue; }
                 got = 1;
                 break;
             }
         }
-        av_packet_unref(pkt);
+        if (!got && pass == 1) { /* nothing at or after the target: fall through to pass 2 */ }
     }
     if (!got) { ret = -1; goto done; }
     int sw = frame->width, sh = frame->height;
@@ -242,7 +252,7 @@ static int build_audio_graph(Job *j, int sample_rate, int mono) {
     j->agraph = avfilter_graph_alloc();
     if (j->adec->ch_layout.order == AV_CHANNEL_ORDER_UNSPEC) av_channel_layout_default(&j->adec->ch_layout, j->adec->ch_layout.nb_channels > 0 ? j->adec->ch_layout.nb_channels : 2);
     av_channel_layout_describe(&j->adec->ch_layout, layout, sizeof(layout));
-    snprintf(args, sizeof(args), "time_base=1/%d:sample_rate=%d:sample_fmt=%s:channel_layouts=%s",
+    snprintf(args, sizeof(args), "time_base=1/%d:sample_rate=%d:sample_fmt=%s:channel_layout=%s",
              j->adec->sample_rate, j->adec->sample_rate, av_get_sample_fmt_name(j->adec->sample_fmt), layout);
     int ret = avfilter_graph_create_filter(&j->asrc, avfilter_get_by_name("abuffer"), "ain", args, NULL, j->agraph);
     if (ret < 0) return ret;

@@ -12,7 +12,7 @@ mk() { # name, then ffmpeg output options
 }
 
 mk sample.mkv  -c:v libx264 -pix_fmt yuv420p -c:a aac
-mk sample.avi  -c:v mpeg4 -c:a libmp3lame
+mk sample.avi  -c:v msmpeg4 -c:a libmp3lame
 mk sample.webm -c:v libvpx-vp9 -b:v 600k -c:a libopus
 mk sample.wmv  -c:v wmv2 -c:a wmav2
 mk sample.flv  -c:v flv -c:a libmp3lame
