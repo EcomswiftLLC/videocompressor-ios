@@ -26,6 +26,30 @@ final class NativeEngineTests: XCTestCase {
         }
     }
 
+    /// A 4K source streams frame by frame: the app's memory must stay far below the size of the decoded clip.
+    func testFourKSourceStreamsWithoutBlowingMemory() async throws {
+        let src = try await SyntheticVideo.make(.init(duration: 3, width: 3840, height: 2160, fps: 15, bitrate: 20_000_000, name: "uhd"))
+        let info = try await probe(src)
+        XCTAssertEqual(info.width, 3840)
+        var settings = CompressionSettings()
+        settings.maxLongSide = 1920
+        let before = Self.residentMegabytes()
+        let result = try await CompressionRunner.run(info: info, settings: settings, outputDirectory: outputDir()) { _ in }
+        let after = Self.residentMegabytes()
+        // 120 decoded 4K frames would be about 1.4 GB if buffered; streaming keeps growth well under that.
+        XCTAssertLessThan(after - before, 700, "memory grew from \(before) MB to \(after) MB")
+        try await verify(result.outputURL, duration: 3, width: 1920, height: 1080, audio: true)
+    }
+
+    private static func residentMegabytes() -> Double {
+        var info = mach_task_basic_info()
+        var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size / MemoryLayout<natural_t>.size)
+        let kr = withUnsafeMutablePointer(to: &info) {
+            $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) { task_info(mach_task_self_, task_flavor_t(MACH_TASK_BASIC_INFO), $0, &count) }
+        }
+        return kr == KERN_SUCCESS ? Double(info.resident_size) / 1_048_576 : 0
+    }
+
     func testProbeReadsGeneratedClip() async throws {
         let src = try await SyntheticVideo.make(.init(duration: 4, name: "probe"))
         let info = try await probe(src)

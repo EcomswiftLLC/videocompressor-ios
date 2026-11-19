@@ -329,8 +329,12 @@ struct SetupView: View {
                         if items.count == 1, let info = items.first?.info, info.duration > 2 {
                             TrimControls(duration: info.duration)
                         }
-                        if items.contains(where: { $0.info.isHDR }) {
+                        if items.contains(where: { $0.info.isHDR && $0.info.route == .native }) {
                             Label("HDR video is converted to standard colours so it looks right everywhere.", systemImage: "sun.max")
+                                .font(SK.Font.caption).foregroundStyle(SK.Palette.mist)
+                        }
+                        if items.contains(where: { $0.info.isHDR && $0.info.route == .ffmpeg }) {
+                            Label("HDR in this file format can't be converted yet, so colours may look flat on some screens.", systemImage: "sun.max")
                                 .font(SK.Font.caption).foregroundStyle(SK.Palette.mist)
                         }
                     }
