@@ -24,6 +24,7 @@ final class NativeSession: @unchecked Sendable {
     private let job: TranscodeJob
     private let progress: @Sendable (ProgressUpdate) -> Void
     private let lock = NSLock()
+    private let avLock = NSLock()
     private var cancelledFlag = false
     private var reader: AVAssetReader?
     private var writer: AVAssetWriter?
@@ -40,6 +41,8 @@ final class NativeSession: @unchecked Sendable {
         let r = reader
         let w = writer
         lock.unlock()
+        // AVAssetReader crashes if cancelReading() lands while startReading() is still running on another thread.
+        avLock.lock(); defer { avLock.unlock() }
         r?.cancelReading()
         w?.cancelWriting()
     }
@@ -213,12 +216,24 @@ final class NativeSession: @unchecked Sendable {
         lock.unlock()
         if isCancelled { throw TranscodeError.cancelled }
 
-        guard writer.startWriting() else { throw TranscodeError.map(writer.error ?? TranscodeError.failed("Writing could not start.")) }
+        // Start both sides while holding avLock so a cancel cannot hit the reader mid-start (that crashed AVFoundation).
+        avLock.lock()
+        guard writer.startWriting() else {
+            avLock.unlock()
+            throw TranscodeError.map(writer.error ?? TranscodeError.failed("Writing could not start."))
+        }
         guard reader.startReading() else {
             writer.cancelWriting()
+            avLock.unlock()
             throw TranscodeError.map(reader.error ?? TranscodeError.failed("Reading could not start."))
         }
         writer.startSession(atSourceTime: CMTime(seconds: startSeconds, preferredTimescale: 600))
+        avLock.unlock()
+        if isCancelled {
+            writer.cancelWriting()
+            reader.cancelReading()
+            throw TranscodeError.cancelled
+        }
 
         // MARK: pump samples
         await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
