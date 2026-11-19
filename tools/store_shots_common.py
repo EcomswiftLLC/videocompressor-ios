@@ -30,10 +30,10 @@ CHAMPAGNE = (230, 201, 139)
 # (capture name, headline lines, supporting line). Copy is limited to what the app does (SPEC.md, App 5).
 SLIDES = [
     ("home-filled", ["Make big videos", "small."], "Pick a clip, pick a size. Free, no account."),
-    ("setup-target", ["Under 16 MB", "for WhatsApp."], "Set a size in MB and Shrinkly aims for it."),
+    ("setup-target", ["Pick the exact", "size."], "Drag to a size in MB and Shrinkly aims for it."),
     ("setup-presets", ["A preset for", "every app."], "WhatsApp, Telegram, Discord, Email, Reels, TikTok, X and more."),
     ("setup-advanced", ["Every detail,", "your call."], "Resolution, frame rate, H.264 or HEVC, audio and metadata."),
-    ("processing", ["Made on your", "device."], "Videos are compressed on this phone and never uploaded."),
+    ("processing", ["Made on your", "device."], "Videos are compressed on this device and never uploaded."),
     ("result", ["See exactly what", "you saved."], "Original size, new size and the percentage, side by side."),
     ("compare", ["Check quality", "before you save."], "Slide between the original and the compressed video."),
     ("batch", ["Shrink a whole", "batch at once."], "Queue many videos and watch your saved total grow."),

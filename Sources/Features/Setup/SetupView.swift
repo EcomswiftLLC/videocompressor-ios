@@ -85,19 +85,30 @@ struct SetupView: View {
     private var presetsSection: some View {
         VStack(alignment: .leading, spacing: SK.Space.s) {
             SKSectionTitle(text: "Where is it going?")
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: SK.Space.s) {
-                    ForEach(Presets.all) { preset in
-                        SKOptionChip(title: preset.title, subtitle: preset.subtitle, systemImage: preset.symbol,
-                                     selected: s.presetID == preset.id) {
-                            model.applyPreset(preset)
-                            syncModeFromSettings()
-                        }
-                        .accessibilityIdentifier("preset-\(preset.id)")
-                    }
+            if hSize == .regular {
+                // Wide windows show every preset at once instead of a clipped scrolling row.
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 190), spacing: SK.Space.s, alignment: .leading)], alignment: .leading, spacing: SK.Space.s) {
+                    presetChips
                 }
                 .padding(.vertical, 2)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: SK.Space.s) { presetChips }
+                        .padding(.vertical, 2)
+                }
             }
+        }
+    }
+
+    @ViewBuilder
+    private var presetChips: some View {
+        ForEach(Presets.all) { preset in
+            SKOptionChip(title: preset.title, subtitle: preset.subtitle, systemImage: preset.symbol,
+                         selected: s.presetID == preset.id) {
+                model.applyPreset(preset)
+                syncModeFromSettings()
+            }
+            .accessibilityIdentifier("preset-\(preset.id)")
         }
     }
 
