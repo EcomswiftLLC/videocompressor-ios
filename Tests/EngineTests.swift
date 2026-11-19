@@ -118,7 +118,7 @@ final class NativeEngineTests: XCTestCase {
     }
 
     func testCancelStopsAndRemovesOutput() async throws {
-        let src = try await SyntheticVideo.make(.init(duration: 30, name: "cancel"))
+        let src = try await SyntheticVideo.make(.init(duration: 10, name: "cancel"))
         let info = try await probe(src)
         let dir = outputDir()
         let task = Task { () -> CompressionResult in
