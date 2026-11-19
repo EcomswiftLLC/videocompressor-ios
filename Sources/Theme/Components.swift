@@ -155,10 +155,10 @@ struct SKSizeBars: View {
         let ratio = before > 0 ? max(0.02, min(1, Double(after) / Double(before))) : 1
         VStack(alignment: .leading, spacing: 10) {
             bar(label: "Original", value: ByteFormat.string(before), fraction: 1, color: SK.Palette.mist.opacity(0.55))
-            bar(label: "Now", value: ByteFormat.string(after), fraction: ratio, color: SK.Palette.glacier)
+            bar(label: "Compressed", value: ByteFormat.string(after), fraction: ratio, color: SK.Palette.glacier)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text("Original \(ByteFormat.string(before)), now \(ByteFormat.string(after))"))
+        .accessibilityLabel(Text("Original \(ByteFormat.string(before)), compressed \(ByteFormat.string(after))"))
     }
 
     private func bar(label: String, value: String, fraction: Double, color: Color) -> some View {

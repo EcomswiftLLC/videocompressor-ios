@@ -54,14 +54,23 @@ private struct DebugHost: View {
         return urls
     }
 
+    /// The bundled sample is only 5 MB, so demo screens aim for a small target (a real compression, chosen by the "user").
+    private func applyDemoTarget() {
+        if let p = Presets.preset(id: "email") { model.applyPreset(p) }
+        model.settings.presetID = nil
+        model.settings.mode = .targetSize(bytes: 1_200_000)
+    }
+
     private func prepare() async {
         switch name {
         case "home-filled":
             history.debugSeed()
         case "setup", "setup-target", "setup-presets", "setup-advanced":
             await model.add(urls: samples(1))
-            if name == "setup-target" || name == "setup-presets" {
+            if name == "setup-presets" {
                 if let p = Presets.preset(id: "whatsapp") { model.applyPreset(p) }
+            } else if name == "setup-target" {
+                applyDemoTarget()
             }
         case "processing":
             await model.add(urls: samples(1))
@@ -73,17 +82,17 @@ private struct DebugHost: View {
             }
         case "batch":
             await model.add(urls: samples(4))
-            model.applyPreset(Presets.preset(id: "whatsapp")!)
+            applyDemoTarget()
             model.start()
             await model.waitUntilFinished()
         case "result":
             await model.add(urls: samples(1))
-            model.applyPreset(Presets.preset(id: "whatsapp")!)
+            applyDemoTarget()
             model.start()
             await model.waitUntilFinished()
         case "compare":
             await model.add(urls: samples(1))
-            model.applyPreset(Presets.preset(id: "email")!)
+            applyDemoTarget()
             model.start()
             await model.waitUntilFinished()
             compareJob = model.jobs.first
