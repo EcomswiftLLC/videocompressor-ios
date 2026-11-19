@@ -1,0 +1,85 @@
+name: Shrinkly
+options:
+  bundleIdPrefix: com.ecomswift
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+  developmentLanguage: en
+  generateEmptyDirectories: true
+configFiles:
+  Debug: Config/Debug.xcconfig
+  Release: Config/Release.xcconfig
+packages:
+  GoogleMobileAds:
+    url: https://github.com/googleads/swift-package-manager-google-mobile-ads.git
+    from: 12.0.0
+  GoogleUserMessagingPlatform:
+    url: https://github.com/googleads/swift-package-manager-google-user-messaging-platform.git
+    from: 3.0.0
+settings:
+  base:
+    SWIFT_VERSION: "5.10"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    TARGETED_DEVICE_FAMILY: "1,2"
+    DEVELOPMENT_TEAM: N84NGN3KSH
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+targets:
+  Shrinkly:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+        excludes:
+          - "**/.gitkeep"
+    dependencies:
+      - package: GoogleMobileAds
+        product: GoogleMobileAds
+      - package: GoogleUserMessagingPlatform
+        product: GoogleUserMessagingPlatform
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ecomswift.shrinkly
+        PRODUCT_NAME: Shrinkly
+        INFOPLIST_FILE: Sources/Resources/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        CODE_SIGN_STYLE: Automatic
+        SUPPORTS_MACCATALYST: NO
+        SWIFT_STRICT_CONCURRENCY: minimal
+        TARGETED_DEVICE_FAMILY: "1,2"
+  ShrinklyTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - Tests
+    dependencies:
+      - target: Shrinkly
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ecomswift.shrinkly.tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Shrinkly.app/Shrinkly"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+  ShrinklyUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - UITests
+    dependencies:
+      - target: Shrinkly
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ecomswift.shrinkly.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: Shrinkly
+schemes:
+  Shrinkly:
+    build:
+      targets:
+        Shrinkly: all
+    test:
+      targets:
+        - ShrinklyTests
+        - ShrinklyUITests
